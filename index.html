@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Зелёная карусель</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Экран авторизации -->
+  <div id="login-screen" class="center-screen">
+    <h1>Зелёная карусель</h1>
+    <form id="login-form">
+      <label for="login-user">Пользователь:</label>
+      <select id="login-user"></select>
+      <label for="login-pass">Пароль (4 цифры):</label>
+      <input type="password" id="login-pass" maxlength="4" pattern="\d{4}" required />
+      <button type="submit">Войти</button>
+    </form>
+    <button id="register-user">➕ Добавить пользователя</button>
+  </div>
+
+  <!-- Основное приложение -->
+  <div id="main-app" class="hidden">
+    <header class="topbar">
+      <h1>Зелёная карусель</h1>
+      <div class="user-switch">
+        <span id="current-user-label"></span>
+        <button id="logout">Выйти</button>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-target="plants">Мои растения</button>
+      <button class="tab" data-target="offers">Предложения</button>
+      <button class="tab" data-target="history">История</button>
+    </nav>
+
+    <main>
+      <!-- Растения -->
+      <a href="https://t.me/Green_carousel_username_bot" class="telegram-button">💬 Наш бот в Telegram</a>
+      <section id="plants" class="tab-content active">
+        <form id="add-plant-form" class="add-form">
+          <h3>Добавить новое растение</h3>
+          <input type="text" id="plant-name" placeholder="Название" required />
+          <select id="plant-type-add" required>
+            <option value="">Выберите тип</option>
+            <option value="Декоративное">Декоративное</option>
+            <option value="Суккулент">Суккулент</option>
+            <option value="Домашнее">Домашнее</option>
+            <option value="Садовое">Садовое</option>
+          </select>
+          <textarea id="plant-description" placeholder="Описание (необязательно)"></textarea>
+          <button type="submit">Добавить</button>
+        </form>
+        <div class="filter-row">
+          <label for="plant-type">Тип:</label>
+          <select id="plant-type">
+            <option value="">Все</option>
+            <option value="Декоративное">Декоративное</option>
+            <option value="Суккулент">Суккулент</option>
+            <option value="Домашнее">Домашнее</option>
+            <option value="Садовое">Садовое</option>
+          </select>
+          <button id="apply-filters">Фильтровать</button>
+        </div>
+        <ul id="my-plants" class="list-style"></ul>
+      </section>
+
+      <!-- Предложения -->
+      <section id="offers" class="tab-content">
+        <div id="exchange-offers" class="list-style"></div>
+      </section>
+
+      <!-- История -->
+      <section id="history" class="tab-content">
+        <div id="exchange-history" class="list-style"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
