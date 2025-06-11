@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Зелёная карусель</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Экран авторизации -->
+  <div id="login-screen" class="center-screen">
+    <h1>Зелёная карусель</h1>
+    <form id="login-form">
+      <label for="login-user">Пользователь:</label>
+      <select id="login-user"></select>
+      <label for="login-pass">Пароль (4 цифры):</label>
+      <input type="password" id="login-pass" maxlength="4" pattern="\d{4}" required />
+      <button type="submit">Войти</button>
+    </form>
+    <button id="register-user">➕ Добавить пользователя</button>
+  </div>
+
+  <!-- Основное приложение -->
+  <div id="main-app" class="hidden">
+    <header class="topbar">
+      <h1>Зелёная карусель</h1>
+      <div class="user-switch">
+        <span id="current-user-label"></span>
+        <button id="logout">Выйти</button>
+      </div>
+    </header>
+    <nav class="tabs">
+      <button class="tab active" data-target="plants">Мои растения</button>
+      <button class="tab" data-target="offers">Предложения</button>
+      <button class="tab" data-target="history">История</button>
+    </nav>
+    <main>
+      <!-- Растения -->
+      <section id="plants" class="tab-content active">
+        <form id="add-plant-form" class="add-form">
+          <h3>Добавить новое растение</h3>
+          <input type="text" id="plant-name" placeholder="Название" required />
+          <select id="plant-type-add" required>
+            <option value="">Выберите тип</option>
+            <option value="Декоративное">Декоративное</option>
+            <option value="Суккулент">Суккулент</option>
+            <option value="Домашнее">Домашнее</option>
+            <option value="Садовое">Садовое</option>
+          </select>
+          <textarea id="plant-description" placeholder="Описание (необязательно)"></textarea>
+          <button type="submit">Добавить</button>
+        </form>
+        <div class="filter-row">
+          <label for="plant-type">Тип:</label>
+          <select id="plant-type">
+            <option value="">Все</option>
+            <option value="Декоративное">Декоративное</option>
+            <option value="Суккулент">Суккулент</option>
+            <option value="Домашнее">Домашнее</option>
+            <option value="Садовое">Садовое</option>
+          </select>
+          <button id="apply-filters">Фильтровать</button>
+        </div>
+        <ul id="my-plants" class="list-style"></ul>
+      </section>
+      <!-- Предложения -->
+      <section id="offers" class="tab-content">
+        <div id="exchange-offers" class="list-style"></div>
+      </section>
+      <!-- История -->
+      <section id="history" class="tab-content">
+        <div id="exchange-history" class="list-style"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Новый чат-бот -->
+  <div id="chat-container" class="chat-hidden" aria-live="polite">
+    <div id="chat-header">
+      <span>Помощник Зелёной карусели</span>
+      <button id="minimize-chat" aria-label="Свернуть чат">−</button>
+      <button id="close-chat" aria-label="Закрыть чат">×</button>
+    </div>
+    <div id="chat-messages" role="log"></div>
+    <!-- Кнопки команд -->
+    <div class="command-buttons">
+      <button data-command="/help">📄 Помощь</button>
+      <button data-command="/start">👋 Приветствие</button>
+      <button data-command="/plants">🌱 Мои растения</button>
+      <button data-command="/exchange">🔁 Предложить обмен</button>
+      <button data-command="/info">ℹ️ О сайте</button>
+    </div>
+    <div id="chat-input-area">
+      <input type="text" id="user-input" placeholder="Задайте ваш вопрос..." aria-label="Ваше сообщение">
+      <button id="send-btn">➤</button>
+    </div>
+  </div>
+  <div id="chat-toggle" role="button" aria-label="Открыть чат-помощник">💬 Помощник</div>
+
+  <script src="script.js"></script>
+
+  <!-- Скрипт для нового чат-бота -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const chatContainer = document.getElementById('chat-container');
+      const chatToggle = document.getElementById('chat-toggle');
+      const minimizeBtn = document.getElementById('minimize-chat');
+      const closeBtn = document.getElementById('close-chat');
+      const chatMessages = document.getElementById('chat-messages');
+      const userInput = document.getElementById('user-input');
+      const sendBtn = document.getElementById('send-btn');
+
+      addBotMessage("Здравствуйте! Я AI-помощник Зелёной карусели. Могу помочь вам с обменом растений.");
+
+      chatToggle.addEventListener('click', function () {
+        chatContainer.classList.remove('chat-hidden');
+        chatToggle.style.display = 'none';
+        userInput.focus();
+      });
+
+      minimizeBtn.addEventListener('click', function () {
+        chatContainer.classList.toggle('minimized');
+        minimizeBtn.textContent = chatContainer.classList.contains('minimized') ? '+' : '−';
+      });
+
+      closeBtn.addEventListener('click', function () {
+        chatContainer.classList.add('chat-hidden');
+        setTimeout(() => {
+          chatToggle.style.display = 'block';
+        }, 300);
+      });
+
+      async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+        addUserMessage(message);
+        userInput.value = '';
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+        chatMessages.appendChild(typingIndicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Обработка команд
+        if (message.startsWith('/')) {
+          let reply = '';
+          switch (message.toLowerCase()) {
+            case '/help':
+              reply = `Доступные команды:\n/help — Показать список команд\n/start — Приветствие\n/plants — Показать мои растения\n/exchange — Предложить обмен\n/info — Информация о сайте`;
+              break;
+            case '/start':
+              reply = "Здравствуйте! Я AI-помощник Зелёной карусели. Могу помочь вам с обменом растений.";
+              break;
+            case '/plants':
+              fetchPlantsAndShow();
+              chatMessages.removeChild(typingIndicator);
+              return;
+            case '/exchange':
+              reply = "Чтобы предложить обмен, откройте раздел «Мои растения» и нажмите «Предложить обмен» у нужного растения.";
+              break;
+            case '/info':
+              reply = "Зелёная карусель — это платформа для обмена растениями между пользователями. Цель — делиться зеленью, опытом и радостью!";
+              break;
+            default:
+              reply = "Неизвестная команда. Введите /help, чтобы посмотреть доступные команды.";
+          }
+          chatMessages.removeChild(typingIndicator);
+          addBotMessage(reply);
+          userInput.disabled = false;
+          sendBtn.disabled = false;
+          userInput.focus();
+          return;
+        }
+
+        try {
+          const response = await fetch('https://api.deepinfra.com/v1/openai/chat/completions',  {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer hd2YqIvAP43FzTGEe4xeQUmTurAfYlCH"
+            },
+            body: JSON.stringify({
+              model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+              messages: [
+                { role: "system", content: "Вы — помощник платформы 'Зелёная карусель'. Помогайте пользователям с обменом растений, советами по уходу и общими вопросами." },
+                { role: "user", content: message }
+              ],
+              temperature: 0.7,
+              max_tokens: 500
+            })
+          });
+          if (!response.ok) throw new Error(`Ошибка API: ${response.status}`);
+          const data = await response.json();
+          const botReply = data.choices[0].message.content;
+          chatMessages.removeChild(typingIndicator);
+          addBotMessage(botReply);
+        } catch (error) {
+          console.error("Ошибка API:", error);
+          chatMessages.removeChild(typingIndicator);
+          addBotMessage("Извините, произошла ошибка. Пожалуйста, попробуйте позже.");
+        } finally {
+          userInput.disabled = false;
+          sendBtn.disabled = false;
+          userInput.focus();
+        }
+      }
+
+      sendBtn.addEventListener('click', sendMessage);
+      userInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendMessage();
+      });
+
+      function addUserMessage(text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message user-message';
+        msgDiv.textContent = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function addBotMessage(text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message bot-message';
+        const avatar = document.createElement('div');
+        avatar.className = 'bot-avatar';
+        avatar.textContent = '🌱';
+        const textContainer = document.createElement('div');
+        textContainer.className = 'bot-text';
+        textContainer.textContent = text;
+        msgDiv.appendChild(avatar);
+        msgDiv.appendChild(textContainer);
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      // === Локальная загрузка растений из localStorage ===
+      function fetchPlantsAndShow() {
+        const STORAGE_KEY = 'greenCarouselData';
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+          plants: [],
+          users: [],
+          offers: [],
+          history: []
+        };
+
+        const plants = data.plants;
+        const myPlants = plants.filter(p => p.owner_id === CURRENT_USER_ID);
+
+        if (myPlants.length === 0) {
+          addBotMessage("У вас пока нет растений.");
+          return;
+        }
+
+        let plantList = "🌱 Ваши растения:\n";
+        myPlants.forEach((p, i) => {
+          plantList += `${i + 1}. ${p.name} (${p.type}) — ${p.description || 'Без описания'}\n`;
+        });
+
+        addBotMessage(plantList);
+      }
+
+      // Обработка кликов по кнопкам-командам
+      const commandButtons = document.querySelectorAll('.command-buttons button');
+      commandButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const command = button.getAttribute('data-command');
+          if (command) {
+            userInput.value = command;
+            sendMessage(); // Отправляем команду как обычное сообщение
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
